@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 import bodyParser from 'body-parser'
+import {mongoose} from 'mongoose';
+import customerModel from './CustomerModel.js';
 dotenv.config()
 
 const jsonParser = bodyParser.json()
@@ -15,6 +17,7 @@ const __dirname = path.dirname(__filename)
 console.log(__dirname);
 
 const app = express()
+app.use(express.json()); 
 const port = 8000
 //here is a change
 app.use(express.urlencoded({ extended: false }));
@@ -29,6 +32,30 @@ app.get(/^(?!\/api).+/, (req, res) => {
   res.sendFile(path.join(__dirname, '../build/index.html'))
 });
 
+
+mongoose.connect("mongodb://localhost:27017/Assignment2");
+
+app.post('/api/addInfo', async (req, res) => {
+  try {
+    if (!req.body.name || !req.body.movie || !req.body.email) {
+      return res.status(206).json({ error: 'Required fields are missing' });
+  }
+
+    const info = await customerModel.create({
+      name: req.body.name,
+      movie: req.body.movie,
+      email: req.body.email
+    });
+    res.status(200).json({success: "Successful Addition", logs: info});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({error: "An Internal Error happened boss"});
+  } 
+});
+
+
+
+
 /*const movieData = JSON.parse(fs.readFileSync('./movies.json'));
 console.log(movieData);
 /*let movieData = [
@@ -41,6 +68,7 @@ console.log(movieData);
 app.get('/api/movies', async (req, res) => {
     
     //res.json(movieData)
+    
     const client = new MongoClient(process.env.MONGO_CONNECT);
     
     await client.connect();
@@ -121,3 +149,5 @@ const saveData = () => {
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
+
+export default app;
